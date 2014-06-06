@@ -1,0 +1,641 @@
+
+<html>
+ <head>
+ <title>jQuery html</title>
+ <style type="text/css">
+#board {
+    width:400px;
+	margin:40px;
+	
+}
+.s_kl, .t_kl{
+    width:50px;
+    height:50px;
+    float:left;
+    padding:0px;
+    margin:0px;
+}
+
+.s_kl{
+    background:white;
+  outline: 1px solid #666;
+}
+.t_kl{
+    background:gray;
+	outline: 1px solid #666;
+} 
+.highlight {
+	background: yellow;
+}
+</style> 
+      
+
+<script src="http://localhost:8080/socket.io/socket.io.js"></script>
+<script src="Сhess.js"></script>
+
+ <script src = "http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> 
+ <script language="JavaScript"> 
+
+isFigureSelected = false; // выбрана ли фигура?
+figureSelected = null; // выбранная фигура
+blackOrWhite = true; // true - ходят белые, false - черные
+
+ function start() { 
+	addBoard();
+	AddChess(); 
+	} 
+window.onload = start; 
+
+
+
+//socket.on('start',function (A));
+ 
+ function changeBoard(prevX_on, prevY_on, nextX_on, nextY_on){
+	tmpobj = {};//адаптируем для внутр. представления доски
+	tmpobj.newPrevX=7-prevX_on;
+	tmpobj.newPrevY=prevY_on;
+	tmpobj.newNextX=7-nextX_on;
+    tmpobj.newNextY=nextY_on;
+	return tmpobj;
+ }
+
+  function decode(prevX_from, prevY_from, nextX_from, nextY_from){
+	tmpobj_1 = {};//адаптируем из внутр. представления доски для сервера
+	tmpobj_1.newPrevXX=7-prevX_on;
+	tmpobj_1.newPrevYY=prevY_on;
+	tmpobj_1.newNextXX=7-nextX_on;
+    tmpobj_1.newNextYY=nextY_on;
+	return tmpobj_1;
+ }
+ 
+ 
+ 
+ 
+function addBoard(){
+   for (var i = 0; i < 8; i++) {
+        for (var j = 0; j < 8; j++) {
+            if ((i%2==0 && j%2==0)|| (i%2!=0 && j%2!=0)){
+                $("#board").append('<div  figureColor= "No" cX=' + i + ' cY=' + j + ' class="s_kl" ></div>');
+              
+            }
+            else $("#board").append('<div  figureColor= "No"  cX=' + i + ' cY=' + j + ' class="t_kl" ></div>');
+           
+        }
+    }
+}
+
+ function AddChess(){
+  
+  $("div").slice(9,17).attr('figureColor', 'black').wrapInner('<img src="./Chess_piece/Pawn_black.jpg" width="50" height="50" alt="">'); 
+  $("div").slice(49,57).attr('figureColor', 'white').wrapInner('<img src="./Chess_piece/Pawn_white.jpg" width="50" height="50" alt="">'); 
+			//slice(start, end) - отбирает поднабор из набора элементов.
+  
+ $("div:eq(1),div:eq(8)").attr('figureColor', 'black').wrapInner('<img src="./Chess_piece/Rook_black.jpg" width="50" height="50" alt="">');   
+ $("div:eq(2),div:eq(7)").attr('figureColor', 'black').wrapInner('<img src="./Chess_piece/Knight_black.jpg" width="50" height="50" alt="">');   
+ $("div:eq(3),div:eq(6)").attr('figureColor', 'black').wrapInner('<img src="./Chess_piece/Bishop_black.jpg" width="50" height="50" alt="">');   
+ $("div:eq(4)").attr('figureColor', 'black').wrapInner('<img src="./Chess_piece/Queen_black.jpg" width="50" height="50" alt="">');   
+ $("div:eq(5)").attr('figureColor', 'black').wrapInner('<img src="./Chess_piece/King_black.jpg" width="50" height="50" alt="">');   
+ 
+ $("div:eq(57),div:eq(64)").attr('figureColor', 'white').wrapInner('<img src="./Chess_piece/Rook_white.jpg" width="50" height="50" alt="">');   
+ $("div:eq(58),div:eq(63)").attr('figureColor', 'white').wrapInner('<img src="./Chess_piece/Knight_white.jpg" width="50" height="50" alt="">');   
+ $("div:eq(59),div:eq(62)").attr('figureColor', 'white').wrapInner('<img src="./Chess_piece/Bishop_white.jpg" width="50" height="50" alt="">');   
+ $("div:eq(60)").attr('figureColor', 'white').wrapInner('<img src="./Chess_piece/Queen_white.jpg" width="50" height="50" alt="">');   
+ $("div:eq(61)").attr('figureColor', 'white').wrapInner('<img src="./Chess_piece/King_white.jpg" width="50" height="50" alt="">');   
+ 
+ 
+ 
+$('div').click(function() {
+	var x;
+	var x1;
+	var y1;
+	var y;
+	
+if (isMyTurn){
+	if (blackOrWhite) {
+		// ходят белые
+	
+		console.log('Here --inside blackOrWhite========= ');	
+		if (isFigureSelected) {
+			// проверка хода фигуры
+			
+			if (pawnMove(figureSelected.attr('cX'), figureSelected.attr('cY'), $(this).attr('cX'), $(this).attr('cY'))) {
+				
+				// будет выполняться if, если функция pawnMove() вернет true
+				//движение 
+				$(figureSelected).empty().removeClass('highlight').attr('figureColor', 'No');
+				$(this).attr('figureColor', 'white').wrapInner('<img src="./Chess_piece/Pawn_white.jpg" width="50" height="50" alt="">'); //делаем ход фигурой --перемещаем фигуру на указанную клетку
+								
+				isFigureSelected = false; // выбрана ли фигура?
+				blackOrWhite = false;
+				console.log('Here 1--inside function pawnMove--white ========= ');
+			
+				var x=figureSelected.attr('cX');
+				var y=figureSelected.attr('cY');
+				var x1=$(this).attr('cX');
+				var y1=$(this).attr('cY');
+			//socket.emit('step',x,y,x1,y1); 
+			}
+				
+				//Движение Ладьи!!!!!!!!!!!!!!!!
+			else if (rookMove(figureSelected.attr('cX'), figureSelected.attr('cY'), $(this).attr('cX'), $(this).attr('cY'))) {
+				
+				$(figureSelected).empty().removeClass('highlight').attr('figureColor', 'No');
+				$(this).attr('figureColor', 'white').wrapInner('<img src="./Chess_piece/Rook_white.jpg" width="50" height="50" alt="">'); //делаем ход фигурой --перемещаем фигуру на указанную клетку
+				
+				
+				isFigureSelected = false; // выбрана ли фигура?
+				blackOrWhite = false;
+				console.log('Here 1--inside function rookMove white========= ');
+		 
+			}
+			//Движение Слона!!!!!!!!!!!!!!!!
+				else if (bishopMove(figureSelected.attr('cX'), figureSelected.attr('cY'), $(this).attr('cX'), $(this).attr('cY'))) {
+				
+				$(figureSelected).empty().removeClass('highlight').attr('figureColor', 'No');//теперь в клетке нет фигуры, а значит, и ее типа и цвета//удаляем фигуру с клетки, на кот. она стояла до нашего хода
+				$(this).attr('figureColor', 'white').wrapInner('<img src="./Chess_piece/Bishop_white.jpg" width="50" height="50" alt="">'); //делаем ход фигурой --перемещаем фигуру на указанную клетку
+				
+				isFigureSelected = false; // выбрана ли фигура?
+				blackOrWhite = false;
+				console.log('Here 1--inside function bishopMove white========= ');
+		 
+			}
+			//Движение Коня!!!!!!!!!!!!!!!!
+			else if(knightMove(figureSelected.attr('cX'), figureSelected.attr('cY'), $(this).attr('cX'), $(this).attr('cY'))){
+				
+				$(figureSelected).empty().removeClass('highlight').attr('figureColor', 'No');//теперь в клетке нет фигуры, а значит, и ее типа и цвета//удаляем фигуру с клетки, на кот. она стояла до нашего хода
+				$(this).attr('figureColor', 'white').wrapInner('<img src="./Chess_piece/Knight_white.jpg" width="50" height="50" alt="">'); //делаем ход фигурой --перемещаем фигуру на указанную клетку
+				
+				isFigureSelected = false; // выбрана ли фигура?
+				blackOrWhite = false;
+				}
+			//Движение Короля!!!!!!!!!!!!!!!!	
+				else if(kingMove(figureSelected.attr('cX'), figureSelected.attr('cY'), $(this).attr('cX'), $(this).attr('cY'))){
+				
+				$(figureSelected).empty().removeClass('highlight').attr('figureColor', 'No');//теперь в клетке нет фигуры, а значит, и ее типа и цвета//удаляем фигуру с клетки, на кот. она стояла до нашего хода
+				$(this).attr('figureColor', 'white').wrapInner('<img src="./Chess_piece/King_white.jpg" width="50" height="50" alt="">'); //делаем ход фигурой --перемещаем фигуру на указанную клетку
+				
+				isFigureSelected = false; // выбрана ли фигура?
+				blackOrWhite = false;
+				}		
+				
+				//Движение Королeвы!!!!!!!!!!!!!!!!	
+				
+				else if(queenMove(figureSelected.attr('cX'), figureSelected.attr('cY'), $(this).attr('cX'), $(this).attr('cY'))){
+				
+				$(figureSelected).empty().removeClass('highlight').attr('figureColor', 'No');//теперь в клетке нет фигуры, а значит, и ее типа и цвета//удаляем фигуру с клетки, на кот. она стояла до нашего хода
+				$(this).attr('figureColor', 'white').wrapInner('<img src="./Chess_piece/Queen_white.jpg" width="50" height="50" alt="">'); //делаем ход фигурой --перемещаем фигуру на указанную клетку
+				
+				isFigureSelected = false; // выбрана ли фигура?
+				blackOrWhite = false;
+				}	
+				
+				
+				
+				else  {
+					alert( "you can\'t go there, choose another direction or figure" );
+					$(figureSelected).removeClass('highlight'); //убираем выделение
+					isFigureSelected = false;
+					} 
+								
+				console.log('Here 2--inside isFigureSelected ========= ');	
+				
+		} else {
+			console.log('Here 3--inside isFigureSelected else========= ');
+			// это фигура? белого цвета?
+			//console.log($(this));
+			if ($(this).attr('figureColor') == 'white') {
+				isFigureSelected = true;
+				figureSelected = $(this);
+				$(this).addClass('highlight');   // закрашиваем клетку, на кот. нажали 
+				blackOrWhite==false;
+				console.log('Here 4--inside if ($(this).attr(figureColor) == white)========= ');
+			} 
+			
+		}
+		
+		
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	
+		
+		var t = decode(x,y,x1,y1);
+		socket.emit('step',t.prevXX,t.prevYY,t.nextXX,t.nextYY); 
+		
+		
+		
+		
+		
+	} else {
+		// ходят черные
+		
+		if (isFigureSelected) {
+			// проверка хода фигуры
+			
+			if (pawnMove(figureSelected.attr('cX'), figureSelected.attr('cY'), $(this).attr('cX'), $(this).attr('cY'))) {
+				
+				// будет выполняться if, если функция pawnMove() вернет true
+				//движение 
+			
+				$(figureSelected).empty().removeClass('highlight').attr('figureColor', 'No');//теперь в клетке нет фигуры, а значит, и ее типа и цвета//удаляем фигуру с клетки, на кот. она стояла до нашего хода
+				$(this).attr('figureColor', 'black').wrapInner('<img src="./Chess_piece/Pawn_black.jpg" width="50" height="50" alt="">'); //делаем ход фигурой --перемещаем фигуру на указанную клетку
+				
+				isFigureSelected = false; // выбрана ли фигура?
+				blackOrWhite = true;
+				console.log('Here 1--inside function pawnMove--black ========= ');
+				
+				var x=figureSelected.attr('cX');
+				var y=figureSelected.attr('cY');
+				var x1=$(this).attr('cX');
+				var y1=$(this).attr('cY');
+			}
+			else if (rookMove(figureSelected.attr('cX'), figureSelected.attr('cY'), $(this).attr('cX'), $(this).attr('cY'))) {
+				//Движение Ладьи!!!!!!!!!!!!!!!!
+				
+				$(figureSelected).empty().removeClass('highlight').attr('figureColor', 'No');//теперь в клетке нет фигуры, а значит, и ее типа и цвета//удаляем фигуру с клетки, на кот. она стояла до нашего хода
+				$(this).attr('figureColor', 'black').wrapInner('<img src="./Chess_piece/Rook_black.jpg" width="50" height="50" alt="">'); //делаем ход фигурой --перемещаем фигуру на указанную клетку
+				
+				isFigureSelected = false; // выбрана ли фигура?
+				blackOrWhite = true;
+				console.log('Here 1--inside function rookMove--black ========= ');
+		 
+			}
+			
+			//Движение Слона!!!!!!!!!!!!!!!!
+				else if (bishopMove(figureSelected.attr('cX'), figureSelected.attr('cY'), $(this).attr('cX'), $(this).attr('cY'))) {
+				
+				$(figureSelected).empty().removeClass('highlight').attr('figureColor', 'No');//теперь в клетке нет фигуры, а значит, и ее типа и цвета//удаляем фигуру с клетки, на кот. она стояла до нашего хода
+				$(this).attr('figureColor', 'black').wrapInner('<img src="./Chess_piece/Bishop_black.jpg" width="50" height="50" alt="">'); //делаем ход фигурой --перемещаем фигуру на указанную клетку
+				
+				isFigureSelected = false; // выбрана ли фигура?
+				blackOrWhite = true;
+				console.log('Here 1--inside function bishopMove--black ========= ');
+		 
+			}
+				//Движение Коня!!!!!!!!!!!!!!!!
+				else if(knightMove(figureSelected.attr('cX'), figureSelected.attr('cY'), $(this).attr('cX'), $(this).attr('cY'))){
+				
+				$(figureSelected).empty().removeClass('highlight').attr('figureColor', 'No');//теперь в клетке нет фигуры, а значит, и ее типа и цвета//удаляем фигуру с клетки, на кот. она стояла до нашего хода
+				$(this).attr('figureColor', 'black').wrapInner('<img src="./Chess_piece/Knight_black.jpg" width="50" height="50" alt="">'); //делаем ход фигурой --перемещаем фигуру на указанную клетку
+				
+				isFigureSelected = false; // выбрана ли фигура?
+				blackOrWhite = true;
+				}
+					
+				//Движение Короля!!!!!!!!!!!!!!!!
+				else if(kingMove(figureSelected.attr('cX'), figureSelected.attr('cY'), $(this).attr('cX'), $(this).attr('cY'))){
+				
+				$(figureSelected).empty().removeClass('highlight').attr('figureColor', 'No');//теперь в клетке нет фигуры, а значит, и ее типа и цвета//удаляем фигуру с клетки, на кот. она стояла до нашего хода
+				$(this).attr('figureColor', 'black').wrapInner('<img src="./Chess_piece/King_black.jpg" width="50" height="50" alt="">'); //делаем ход фигурой --перемещаем фигуру на указанную клетку
+				
+				isFigureSelected = false; // выбрана ли фигура?
+				blackOrWhite = true;
+				}
+				//Движение Королевы!!!!!!!!!!!!!!!!
+				else if(queenMove(figureSelected.attr('cX'), figureSelected.attr('cY'), $(this).attr('cX'), $(this).attr('cY'))){
+				
+				$(figureSelected).empty().removeClass('highlight').attr('figureColor', 'No');//теперь в клетке нет фигуры, а значит, и ее типа и цвета//удаляем фигуру с клетки, на кот. она стояла до нашего хода
+				$(this).attr('figureColor', 'black').wrapInner('<img src="./Chess_piece/Queen_black.jpg" width="50" height="50" alt="">'); //делаем ход фигурой --перемещаем фигуру на указанную клетку
+				
+				isFigureSelected = false; // выбрана ли фигура?
+				blackOrWhite = true;
+				}
+				
+				
+					else {
+				
+					alert( "you can\'t go there, choose another direction or figure" );
+					$(figureSelected).removeClass('highlight'); //убираем выделение
+					isFigureSelected = false;
+					}
+				console.log('Here 2--inside isFigureSelected ========= ');	
+				
+		} else {
+			console.log('Here 3--inside isFigureSelected else========= ');
+			// это фигура? белого цвета?
+			
+			if ($(this).attr('figureColor') == 'black') {
+				
+				isFigureSelected = true;
+				figureSelected = $(this);
+				$(this).addClass('highlight');  // закрашиваем клетку, на кот. нажали 
+				
+				blackOrWhite==true;
+				console.log('Here 4--inside if ($(this).attr(figureColor) == white)========= ');
+			} 
+			
+		}
+	socket.emit('step',x,y,x1,y1); 	
+	}
+	return false;
+	
+	}
+});
+
+ }
+ 
+function pawnMove(prevX, prevY, nextX, nextY) {
+// логика пешки
+if (matrix[prevX][prevY].type=='Pawn'){
+	if ( (matrix[nextX][nextY]==null) &&(nextY==prevY) ){ //простой ход пешки вперед
+		if (   (matrix[prevX][prevY].color=='White' && ((nextX == prevX-1) ||(prevX*1===6 && nextX*1===4)))      ||       (matrix[prevX][prevY].color=='Black' && ((nextX == 1*prevX+1) ||(prevX*1===1 && nextX*1===3) ))  ) { 
+			//белая пешка просто ходит вперед, если впереди нет др фигур (чтобы не получмлось, что черная ходит назад)				//черная пешка просто ходит вперед, если впереди нет др фигур
+			
+			ChangePlaces(prevX, prevY, nextX, nextY);
+		return true;
+		}
+	}
+	
+	if ( (matrix[nextX][nextY]!=null)&& (nextY==(prevY*1+1)||nextY==(prevY-1)) && CanEat(prevX, prevY, nextX, nextY) ){ //пешка ест фигуру
+		if (    (matrix[prevX][prevY].color=='White' && (nextX == prevX-1))    ||      (matrix[prevX][prevY].color=='Black'&& (nextX == 1*prevX+1))    ){
+				//белая пешка есть фигуру 												//черная пешка есть фигуру 
+		
+		ChangePlaces(prevX, prevY, nextX, nextY);
+		return true;
+		}
+	
+	}
+	else return false;
+}	else return false;		
+}
+
+
+
+//function rookMove !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function rookMove(prevX, prevY, nextX, nextY) { 
+
+	if (matrix[prevX][prevY].type=='Rook' && CanEat(prevX, prevY, nextX, nextY)){
+			
+		//фигура белого цвета --- белая ладья не может съесть белую фигуру
+		if (prevY==nextY) { //если двигаемся по вертикали
+		
+			if (nextX>prevX) { //если двигаемся по вертикали вниз
+				var A=prevX*1+1;
+				var Z=nextX;
+			} else {//если двигаемся по вертикали вверх
+				var A=nextX*1+1;
+				var Z=prevX;
+			}
+			
+			for (var i = A; i < Z; i++){ //проверяем на наличие пустых клеток
+				if (matrix[i][nextY]!=null){return false;} //мы не можем сходить ладьей, если нам на пути встретится др. фигура
+				//console.log('matrix[i][nextY]!=null '+matrix[i][nextY]);	
+			}
+			
+		} else if (prevX==nextX) { //если двигаемся по горизонтали
+		
+			if (nextY>prevY) { //если двигаемся по горизонтали вправо
+				var A=prevY*1+1;
+				var Z=nextY;
+			} else {//если двигаемся по горизонтали влево
+				var A=nextY*1+1; 
+				var Z=prevY;}
+		
+			for (var j = A; j < Z; j++){ //проверяем на наличие пустых клеток
+				if (matrix[nextX][j]!=null){return false;}
+			}
+						
+		} else {return false;}
+									
+	ChangePlaces(prevX, prevY, nextX, nextY);
+	
+	return true;
+	} else return false;
+}
+
+//function CanEat!!!!!!!!!!!!!!!!!!!!!!!!
+function CanEat (prevX_2, prevY_2, nextX_2, nextY_2) {
+	if (matrix[nextX_2][nextY_2]==null || matrix[prevX_2][prevY_2].color=='Black' && matrix[nextX_2][nextY_2].color=='White' || matrix[prevX_2][prevY_2].color=='White' && matrix[nextX_2][nextY_2].color=='Black' ){
+	return true;
+	} else return false;
+}
+	
+function ChangePlaces(prevX_3, prevY_3, nextX_3, nextY_3){
+
+	matrix[nextX_3][nextY_3] = matrix[prevX_3][prevY_3];
+	matrix[prevX_3][prevY_3] = null;
+return true;
+}	
+	
+	
+		
+//function knightMove!!!!!!!!!!!!!!!!!!!!!!!!
+	
+function knightMove(prevX, prevY, nextX, nextY){
+	if (matrix[prevX][prevY].type=='Knight' && CanEat(prevX, prevY, nextX, nextY) ){  //если выбрали коня
+		if((Math.abs(nextY*1-prevY*1)===1) && (Math.abs(prevX*1-nextX*1)===2) || (Math.abs(nextX*1-prevX*1)===1) && (Math.abs(prevY*1-nextY*1)===2) ){
+		ChangePlaces(prevX, prevY, nextX, nextY);
+			return true;
+		} else return false;
+	
+	} else return false;
+ }
+	
+
+	//function kingMove !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function kingMove(prevX, prevY, nextX, nextY) {
+	if (matrix[prevX][prevY].type=='King' && CanEat(prevX, prevY, nextX, nextY)){
+		if (Math.abs(nextX*1-prevX*1)<2 && Math.abs(nextY*1-prevY*1)<2){
+		ChangePlaces(prevX, prevY, nextX, nextY);
+			return true;
+		} else return false;
+	}else return false;
+
+}
+	
+	//function queenMove() !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function queenMove(prevX, prevY, nextX, nextY) {
+	if (matrix[prevX][prevY].type=='Queen' && CanEat(prevX, prevY, nextX, nextY)){
+			
+			
+			
+				//фигура белого цвета --- белая ладья не может съесть белую фигуру
+		if (prevY==nextY) { //если двигаемся по вертикали
+		
+			if (nextX>prevX) { //если двигаемся по вертикали вниз
+				var A=prevX*1+1;
+				var Z=nextX;
+			} else {//если двигаемся по вертикали вверх
+				var A=nextX*1+1;
+				var Z=prevX;
+			}
+			
+			for (var i = A; i < Z; i++){ //проверяем на наличие пустых клеток
+				if (matrix[i][nextY]!=null){return false;} //мы не можем сходить ладьей, если нам на пути встретится др. фигура
+				//console.log('matrix[i][nextY]!=null '+matrix[i][nextY]);	
+			}
+			
+		} else if (prevX==nextX) { //если двигаемся по горизонтали
+		
+			if (nextY>prevY) { //если двигаемся по горизонтали вправо
+				var A=prevY*1+1;
+				var Z=nextY;
+			} else {//если двигаемся по горизонтали влево
+				var A=nextY*1+1; 
+				var Z=prevY;}
+		
+			for (var j = A; j < Z; j++){ //проверяем на наличие пустых клеток
+				if (matrix[nextX][j]!=null){return false;}
+			}
+						
+		} 
+		else if ((prevX*1-nextX*1) === (nextY*1-prevY*1)|| (nextX*1-prevX*1)===(nextY*1-prevY*1) ||(nextX*1-prevX*1)===(prevY*1-nextY*1) || (prevX*1-nextX*1)=== (prevY*1-nextY*1))  { //если двигаемся по диагонали 
+							
+			var X=prevX*1;
+			var Y=prevY*1;
+			var K=(Math.abs(prevX*1-nextX*1));
+			console.log('k=== '+K);	
+										
+			for (var i = 0; i < K-1; i++){ //проверяем на наличие пустых клеток
+				 //мы не можем сходить ладьей(сдвинуться с места или съесть фигуру), если нам на пути встретится др. фигура
+				if ((prevX*1-nextX*1)>0){ var X=X*1-1;} else { var X=X*1+1;}
+				if ((prevY*1-nextY*1)>0){ var Y=Y*1-1;} else { var Y=Y*1+1;}
+				if (matrix[X][Y]!=null){return false;}
+			}
+						
+		} else return false;
+			
+			ChangePlaces(prevX, prevY, nextX, nextY);
+			return true;
+		
+					
+			
+			
+	}else return false;	
+}
+
+
+	
+	
+	
+//function bishopMove!!!!!!!!!!!!!!!!!!!!!!!!
+function bishopMove(prevX, prevY, nextX, nextY) { 
+
+	if (matrix[prevX][prevY].type=='Bishop' && CanEat(prevX, prevY, nextX, nextY) ){  //если выбрали слона
+		console.log('matrix[prevX][prevY]== '+matrix[prevX][prevY]);	
+					
+		if ((prevX*1-nextX*1) === (nextY*1-prevY*1)|| (nextX*1-prevX*1)===(nextY*1-prevY*1) ||(nextX*1-prevX*1)===(prevY*1-nextY*1) || (prevX*1-nextX*1)=== (prevY*1-nextY*1))  { //если двигаемся по диагонали 
+							
+			var X=prevX*1;
+			var Y=prevY*1;
+			var K=(Math.abs(prevX*1-nextX*1));
+			console.log('k=== '+K);	
+										
+			for (var i = 0; i < K-1; i++){ //проверяем на наличие пустых клеток
+				 //мы не можем сходить ладьей(сдвинуться с места или съесть фигуру), если нам на пути встретится др. фигура
+				if ((prevX*1-nextX*1)>0){ var X=X*1-1;} else { var X=X*1+1;}
+				if ((prevY*1-nextY*1)>0){ var Y=Y*1-1;} else { var Y=Y*1+1;}
+				if (matrix[X][Y]!=null){return false;}
+			}
+						
+		} else return false;
+			
+			ChangePlaces(prevX, prevY, nextX, nextY);
+			return true;
+	} else return false;
+
+}
+
+	
+matrix = [];
+for (var i = 0; i < 8; i++) {
+		arr = [];
+		for (var j = 0; j < 8; j++) {arr[j] = null; } 
+		matrix[i] = arr;
+		
+}
+
+for (var j = 0; j < 8; j++){
+	matrix[6][j] = { //заполняем белые пешки 
+	type: 'Pawn',
+	color: 'White'
+};
+	matrix[1][j] = { //заполняем черные пешки 
+	type: 'Pawn',
+	color: 'Black'
+};
+}
+
+//черные фигуры
+matrix[0][0] = {
+	type: 'Rook',
+	color: 'Black'
+};
+matrix[0][7] = {
+	type: 'Rook',
+	color: 'Black'
+};
+matrix[0][6] = {
+	type: 'Knight',
+	color: 'Black'
+};
+matrix[0][1] = {
+	type: 'Knight',
+	color: 'Black'
+};
+matrix[0][2] = {
+	type: 'Bishop',
+	color: 'Black'
+};
+matrix[0][5] = {
+	type: 'Bishop',
+	color: 'Black'
+};
+matrix[0][3] = {
+	type: 'Queen',
+	color: 'Black'
+};
+matrix[0][4] = {
+	type: 'King',
+	color: 'Black'
+};
+
+
+//белые фигуры
+
+matrix[7][0] = {
+	type: 'Rook',
+	color: 'White'
+};
+matrix[7][7] = {
+	type: 'Rook',
+	color: 'White'
+};
+matrix[7][6] = {
+	type: 'Knight',
+	color: 'White'
+};
+matrix[7][1] = {
+	type: 'Knight',
+	color: 'White'
+};
+matrix[7][2] = {
+	type: 'Bishop',
+	color: 'White'
+};
+matrix[7][5] = {
+	type: 'Bishop',
+	color: 'White'
+};
+matrix[7][3] = {
+	type: 'Queen',
+	color: 'White'
+};
+matrix[7][4] = {
+	type: 'King',
+	color: 'White'
+};
+
+//AddChess();
+//addBoard();
+
+ </script>
+ </head>
+
+<!-- 
+ <input type="button" value="Draw Blackboard" onclick="addBoard();"> 
+ <input type="button" value="Add Chess" onclick="AddChess();"> -->
+ 
+
+ <br><br>
+ <div id="board"></div>
+ 
+ </body>
+ </html>
